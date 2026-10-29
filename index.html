@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ВТБ — Опрос эквайринга</title>
+<style>
+  /* ================= ПЕРЕМЕННЫЕ ================= */
+  :root {
+    --bg-main: #f4f6fb;
+    --bg-overlay: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(240,244,255,0.6) 100%);
+    
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.7);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --input-bg: rgba(255, 255, 255, 0.6);
+    --input-border: 1px solid rgba(255, 255, 255, 0.8);
+    
+    --accent-blue: #0a2896;
+    --accent-blue-hover: #1237b8;
+    
+    --status-green: #0f9d58;
+    --status-yellow: #eab308;
+    --status-red: #d93025;
+    --status-orange: #f97316;
+    --status-blue: #2f57ff;
+    --status-gray: #94a3b8;
+
+    --row-done: rgba(15, 157, 88, 0.15);
+    --row-partial: rgba(234, 179, 8, 0.2);
+    --row-refuse: rgba(217, 48, 37, 0.15);
+    --row-callback: rgba(47, 87, 255, 0.15);
+    --row-todo: rgba(148, 163, 184, 0.15);
+    
+    --scale-1: #ef4444;
+    --scale-2: #f97316;
+    --scale-3: #eab308;
+    --scale-4: #84cc16;
+    --scale-5: #10b981;
+
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  html[data-theme="dark"] {
+    --bg-main: #050508;
+    --bg-overlay: linear-gradient(135deg, rgba(10,15,30,0.6) 0%, rgba(5,5,8,0.8) 100%);
+    
+    --glass-bg: rgba(15, 20, 30, 0.45);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --input-bg: rgba(0, 0, 0, 0.3);
+    --input-border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    --accent-blue: #3b82f6;
+    --accent-blue-hover: #60a5fa;
+    
+    --status-green: #10b981;
+    --status-yellow: #f59e0b;
+    --status-red: #ef4444;
+    --status-orange: #f97316;
+    --status-blue: #3b82f6;
+    --status-gray: #64748b;
+
+    --row-done: rgba(16, 185, 129, 0.25);
+    --row-partial: rgba(245, 158, 11, 0.25);
+    --row-refuse: rgba(239, 68, 68, 0.25);
+    --row-callback: rgba(59, 130, 246, 0.25);
+    --row-todo: rgba(71, 85, 105, 0.25);
+
+    --scale-1: #ef4444;
+    --scale-2: #f97316;
+    --scale-3: #eab308;
+    --scale-4: #84cc16;
+    --scale-5: #10b981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: var(--font-main);
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.4s, color 0.4s;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ================= УВЕДОМЛЕНИЕ (ТОСТ) ================= */
+  .toast-container {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    background: rgba(217, 48, 37, 0.95);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(217, 48, 37, 0.4);
+    backdrop-filter: blur(10px);
+    animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+  }
+  .toast.error { background: rgba(217, 48, 37, 0.95); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .toast.out {
+    animation: toastOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes toastOut {
+    to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+  }
+
+  /* ================= ФОНОВЫЕ ИЗОБРАЖЕНИЯ ================= */
+  .bg-layer {
+    position: fixed;
+    top: -5%; left: -5%; width: 110vw; height: 110vh;
+    z-index: -2;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity 1.2s ease-in-out, transform 0.1s ease-out;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .bg-layer.active { opacity: 1; }
+  
+  .bg-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1;
+    background: var(--bg-overlay);
+    transition: opacity 0.4s;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+  }
+
+  /* ================= ШАПКА ================= */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    border-bottom: var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--glass-bg);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  }
+
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+  }
+  .logo-img {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    transition: filter 0.3s;
+  }
+  html[data-theme="dark"] .logo-img {
+    filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Плашки статистики с анимацией прыжка */
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--input-bg);
+    border: var(--input-border);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 2px 8px rgba(0,0,0,0.05);
+    backdrop-filter: blur(10px);
+    height: 36px;
+    cursor: default;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+  }
+  .stat-pill:hover {
+    transform: translateY(-3px);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 6px 16px rgba(0,0,0,0.1);
+  }
+
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-done { background: var(--status-green); box-shadow: 0 0 8px var(--status-green); }
+  .dot-partial { background: var(--status-yellow); box-shadow: 0 0 8px var(--status-yellow); }
+  .dot-refuse { background: var(--status-red); box-shadow: 0 0 8px var(--status-red); }
+  .dot-callback { background: var(--status-blue); box-shadow: 0 0 8px var(--status-blue); }
+  .dot-todo { background: var(--status-gray); }
+
+  /* Кнопки в шапке */
+  .header-btn {
+    background: var(--input-bg);
+    border: var(--input-border);
+    color: var(--text-main);
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .header-btn:hover {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+  
+  .header-btn.icon {
+    width: 36px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  /* Настройки и меню */
+  .settings-wrap {
+    position: relative;
+    padding-bottom: 10px;
+    margin-bottom: -10px;
+  }
+  .settings-wrap.active .header-btn {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: var(--accent-blue);
+    transform: rotate(90deg) scale(1.05);
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: var(--glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    width: 260px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
+  }
+  
+  .settings-wrap.active .dropdown-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .settings-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+  .settings-group input {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  /* ================= КОНТЕЙНЕРЫ ================= */
+  .main-container {
+    flex: 1;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 20px;
+    transition: max-width 0.3s ease;
+  }
+  .main-container.mode-survey { max-width: 900px; }
+  .main-container.mode-results { max-width: 100%; padding: 20px; }
+
+  /* ================= LIQUID GLASS ПАНЕЛИ ================= */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: var(--glass-border);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 24px 24px 0 0;
+  }
+  html[data-theme="dark"] .glass-panel::before {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%);
+  }
+
+  @keyframes slideUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+
+  /* ================= ЗАГРУЗКА ================= */
+  .dropzone {
+    border: 2px dashed var(--border-light);
+    border-radius: 16px;
+    padding: 48px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--input-bg);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    transform: scale(1.01);
+  }
+  .dz-icon { font-size: 36px; color: var(--accent-blue); margin-bottom: 16px; filter: drop-shadow(0 4px 8px rgba(59,130,246,0.3)); }
+  .dz-title { font-size: 16px; font-weight: 700; }
+
+  /* ================= ОПРОС ================= */
+  .progress-bar {
+    height: 12px;
+    background: var(--input-bg);
+    border-radius: 6px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--status-blue));
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 12px var(--accent-blue);
+    border-radius: 6px;
+  }
+
+  .client-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .client-name { font-size: 26px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+  
+  .client-meta { 
+    color: var(--text-main); 
+    font-size: 14px; 
+    line-height: 1.6; 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 16px;
+  }
+  .client-meta b { 
+    color: var(--text-muted); 
+    font-weight: 700; 
+  }
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.1);
+    line-height: 1;
+  }
+  .badge-todo { background: var(--row-todo); color: var(--status-gray); border: 1px solid rgba(148, 163, 184, 0.5); }
+  .badge-done { background: var(--row-done); color: var(--status-green); border: 1px solid rgba(16, 185, 129, 0.5); }
+  .badge-partial { background: var(--row-partial); color: var(--status-yellow); border: 1px solid rgba(245, 158, 11, 0.5); }
+  .badge-refuse { background: var(--row-refuse); color: var(--status-red); border: 1px solid rgba(239, 68, 68, 0.5); }
+  .badge-callback { background: var(--row-callback); color: var(--status-blue); border: 1px solid rgba(59, 130, 246, 0.5); }
+
+  .script-box {
+    background: rgba(59, 130, 246, 0.08);
+    border-left: 4px solid var(--accent-blue);
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    color: var(--text-main);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .name-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-blue);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .name-btn:hover { opacity: 0.7; }
+
+  .question-block {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .question-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .q-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .q-label .req-star { color: var(--status-red); margin-left: 4px; transition: opacity 0.2s; }
+
+  .scale-container { display: flex; gap: 12px; }
+  
+  /* Обводка только для комментария */
+  textarea.error {
+    border: 2px solid var(--status-red) !important;
+    background: rgba(217, 48, 37, 0.05) !important;
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  .scale-btn {
+    flex: 1;
+    padding: 16px 0;
+    background: var(--input-bg);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.5), 0 2px 6px rgba(0,0,0,0.05);
+  }
+  
+  .scale-btn:hover { transform: translateY(-2px); }
+  .scale-btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
+  .scale-btn.active[data-v="1"] { background: var(--scale-1); border-color: var(--scale-1); color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+  .scale-btn.active[data-v="2"] { background: var(--scale-2); border-color: var(--scale-2); color: #fff; box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+  .scale-btn.active[data-v="3"] { background: var(--scale-3); border-color: var(--scale-3); color: #fff; box-shadow: 0 0 15px rgba(234, 179, 8, 0.5); }
+  .scale-btn.active[data-v="4"] { background: var(--scale-4); border-color: var(--scale-4); color: #fff; box-shadow: 0 0 15px rgba(132, 204, 22, 0.5); }
+  .scale-btn.active[data-v="5"] { background: var(--scale-5); border-color: var(--scale-5); color: #fff; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+
+  .scale-btn[data-v="1"]:hover { border-color: var(--scale-1); color: var(--scale-1); }
+  .scale-btn[data-v="2"]:hover { border-color: var(--scale-2); color: var(--scale-2); }
+  .scale-btn[data-v="3"]:hover { border-color: var(--scale-3); color: var(--scale-3); }
+  .scale-btn[data-v="4"]:hover { border-color: var(--scale-4); color: var(--scale-4); }
+  .scale-btn[data-v="5"]:hover { border-color: var(--scale-5); color: var(--scale-5); }
+
+  /* Цвета для Да/Перезвон/Не готов */
+  .scale-btn.active[data-v="Готов"] { background: var(--status-green); border-color: var(--status-green); color: #fff; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+  .scale-btn.active[data-v="Перезвон"] { background: var(--status-orange); border-color: var(--status-orange); color: #fff; box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+  .scale-btn.active[data-v="Не готов"] { background: var(--status-red); border-color: var(--status-red); color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+
+  .scale-btn[data-v="Готов"]:hover { border-color: var(--status-green); color: var(--status-green); }
+  .scale-btn[data-v="Перезвон"]:hover { border-color: var(--status-orange); color: var(--status-orange); }
+  .scale-btn[data-v="Не готов"]:hover { border-color: var(--status-red); color: var(--status-red); }
+
+  .conditional-input { margin-top: 16px; display: none; }
+  .conditional-input.show { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+  input[type="text"], input[type="datetime-local"], textarea {
+    width: 100%;
+    padding: 16px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 15px;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 0 0 4px rgba(59, 130, 246, 0.2);
+    background: var(--bg-main);
+  }
+
+  /* ================= КНОПКИ ================= */
+  .btn {
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+  
+  .btn-primary {
+    background: var(--accent-blue);
+    color: #fff;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-blue-hover);
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 25px rgba(59, 130, 246, 0.6);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
+  }
+
+  .btn-ghost {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-main);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--bg-main);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .btn-icon {
+    padding: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);
+  }
+  .btn-icon:hover {
+    background: var(--accent-blue);
+    color: #fff;
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .flex-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+  /* ================= ТАБЛИЦА (GLASS) ================= */
+  .table-wrapper {
+    overflow: auto;
+    max-height: calc(100vh - 200px);
+    border: var(--glass-border);
+    border-radius: 16px;
+    background: var(--glass-bg);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 1500px;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+    z-index: 10;
+    box-shadow: 0 1px 0 var(--border-light);
+    backdrop-filter: blur(20px);
+  }
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+  }
+  th {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+  
+  tr.row-done { background: var(--row-done); }
+  tr.row-done td:first-child { border-left: 4px solid var(--status-green); }
+  tr.row-refused { background: var(--row-refuse); }
+  tr.row-refused td:first-child { border-left: 4px solid var(--status-red); }
+  tr.row-callback { background: var(--row-callback); }
+  tr.row-callback td:first-child { border-left: 4px solid var(--status-blue); }
+  tr.row-partial { background: var(--row-partial); }
+  tr.row-partial td:first-child { border-left: 4px solid var(--status-yellow); }
+  tr.row-todo { background: var(--row-todo); }
+  tr.row-todo td:first-child { border-left: 4px solid var(--status-gray); }
+
+  tr:hover { background: rgba(255,255,255,0.1); }
+  html[data-theme="light"] tr:hover { background: rgba(0,0,0,0.02); }
+
+  .hidden { display: none !important; }
+
+  /* ================= ЭКРАН DISCLAIMER ================= */
+  .disclaimer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .disclaimer-box {
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px);
+    border: var(--glass-border);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .disclaimer-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .warning-box {
+    background: rgba(239, 68, 68, 0.2); 
+    border-left: 4px solid var(--status-red);
+    padding: 16px;
+    border-radius: 12px;
+    color: #000; 
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  html[data-theme="dark"] .warning-box {
+    color: #f8fafc; 
+  }
+
+  .disclaimer-text {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    color: var(--text-main);
+  }
+  .check-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    user-select: none;
+  }
+  .check-label input {
+    margin-top: 2px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent-blue);
+  }
+
+  .nav-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+</style>
+</head>
+<body>
+
+<!-- Тосты (уведомления) -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="bg-layer" id="bg1"></div>
+<div class="bg-layer" id="bg2"></div>
+<div class="bg-layer" id="bg3"></div>
+<div class="bg-overlay"></div>
+
+<div class="disclaimer-overlay" id="disclaimerOverlay">
+  <div class="disclaimer-box">
+    <div class="disclaimer-title">Важное предупреждение</div>
+    
+    <div class="warning-box">
+      ВНИМАНИЕ! Этот сайт не является официальным продуктом Банка ВТБ. Разработчик — энтузиаст, создавший данный инструмент исключительно для упрощения и ускорения обзвона абонентов и заполнения отчетности. Все данные обрабатываются локально в вашем браузере и никуда не отправляются
+    </div>
+    
+    <div class="disclaimer-text">
+      Нажимая кнопку «Продолжить», вы подтверждаете, что понимаете: автор сайта не несет ответственности за некорректно заполненные Excel-файлы, утерянные данные или любые другие последствия, возникшие в результате использования данного программного обеспечения
+    </div>
+
+    <label class="check-label">
+      <input type="checkbox" id="disclaimerCheck">
+      <span>Я принимаю условия и подтверждаю, что автор сайта не несет ответственности за любые последствия использования</span>
+    </label>
+
+    <button class="btn btn-primary" id="disclaimerBtn" disabled style="width: 100%; padding: 16px; font-size: 16px;">Продолжить</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo-wrap">
+    <img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7c/VTB_Logo_2018.svg/1280px-VTB_Logo_2018.svg.png" alt="ВТБ" class="logo-img">
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill">Всего: <span id="statTotal">0</span></div>
+    
+    <div class="stat-pill">
+      <div class="stat-dot dot-done"></div> 
+      <span id="statDone">0</span> 
+      <span style="font-weight:400; opacity:0.8; margin-left:4px;">Завершено</span>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot dot-partial"></div> 
+      <span id="statPartial">0</span> 
+      <span style="font-weight:400; opacity:0.8; margin-left:4px;">Частично</span>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot dot-refuse"></div> 
+      <span id="statRefuse">0</span> 
+      <span style="font-weight:400; opacity:0.8; margin-left:4px;">Отказ</span>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot dot-callback"></div> 
+      <span id="statCallback">0</span> 
+      <span style="font-weight:400; opacity:0.8; margin-left:4px;">Перезвонить</span>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot dot-todo"></div> 
+      <span id="statTodo">0</span> 
+      <span style="font-weight:400; opacity:0.8; margin-left:4px;">Пусто</span>
+    </div>
+
+    <button class="header-btn" id="newFileBtn" title="Загрузить новый файл">Новый файл</button>
+    <button class="header-btn" id="toResultsBtnHeader" title="Результаты">Результаты</button>
+
+    <div class="settings-wrap" id="settingsWrap">
+      <button class="header-btn icon" id="settingsBtn" title="Настройки">⚙️</button>
+      <div class="dropdown-menu" id="settingsDropdown">
+        <div class="settings-group">
+          <label>Ваше имя</label>
+          <input type="text" id="userNameInput" placeholder="Введите имя...">
+        </div>
+        <div class="settings-group">
+          <label>Тема</label>
+          <button class="btn btn-ghost" id="themeBtn" style="width: 100%; padding: 10px;">Светлая</button>
+        </div>
+        <div class="settings-group">
+          <label>Фон</label>
+          <button class="btn btn-ghost" id="bgBtn" style="width: 100%; padding: 10px;">Сменить фон</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="main-container mode-survey" id="mainContainer">
+
+  <section id="screen-import">
+    <div class="glass-panel">
+      <h2>Загрузка базы</h2>
+      <p class="subtitle">Загрузите Excel-файл. Логика вопросов подстроится автоматически под продукт клиента.</p>
+      
+      <div class="dropzone" id="dropzone">
+        <div class="dz-icon">⬇</div>
+        <div class="dz-title">Перетащите файл сюда или нажмите для выбора</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+      </div>
+      <div id="importErr" style="color: var(--status-red); font-size: 13px; margin-top: 12px; font-weight: 600;"></div>
+    </div>
+  </section>
+
+  <section id="screen-survey" class="hidden">
+    
+    <div class="glass-panel" style="padding: 16px 24px; margin-bottom: 24px;">
+      <div class="flex-row" style="width: 100%;">
+        <button class="btn btn-ghost" id="prevBtn" style="flex: 1;">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          Предыдущий
+        </button>
+        <button class="btn btn-ghost" id="nextBtn" style="flex: 1;">
+          Следующий
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    
+    <div class="glass-panel" style="margin-bottom: 24px;">
+      <div class="client-header">
+        <div>
+          <div class="client-name" id="clientName">—</div>
+          <div class="client-meta" id="clientMeta">—</div>
+        </div>
+        <div class="status-badge" id="clientStatus">—</div>
+      </div>
+      
+      <div class="script-box">
+        <span id="greetingPrefix">ИО, </span>добрый день! Меня зовут <span id="scriptUserName"></span>, Банк ВТБ. Мы проводим опрос действующих клиентов Банка ВТБ, которые подключали эквайринг через нашего партнера <b id="partnerName" style="color:var(--accent-blue);">____</b>
+      </div>
+      
+      <div class="question-block" id="qblock-a1">
+        <label class="q-label">Вы готовы ответить на несколько вопросов?<span class="req-star" id="star-a1"> *</span></label>
+        <div class="scale-container" data-q="a1">
+          <button type="button" class="scale-btn" data-v="Готов">Готов</button>
+          <button type="button" class="scale-btn" data-v="Перезвон">Перезвон</button>
+          <button type="button" class="scale-btn" data-v="Не готов">Не готов</button>
+        </div>
+        
+        <!-- Перезвон -->
+        <div class="conditional-input" id="callbackBox">
+          <div class="flex-row" style="justify-content: center; margin-top: 10px;">
+            <input type="datetime-local" id="callbackAt" style="max-width: 220px;">
+            <button class="btn btn-primary" id="saveCallback">Сохранить время и завершить опрос</button>
+          </div>
+        </div>
+        
+        <!-- Не готов -->
+        <div class="conditional-input" id="refuseBox" style="margin-top: 16px;">
+          <div class="script-box" style="margin-bottom: 12px;">
+            Извините за беспокойство, всего доброго, до свидания!
+          </div>
+          <button class="btn btn-primary" id="saveRefuseBtn" style="width: 100%;">Завершить опрос</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="questionsBox" class="hidden">
+      
+      <div class="glass-panel" style="margin-bottom: 24px;">
+        <div class="question-block" id="qblock-a2" style="border:none; padding:0; margin:0;">
+          <label class="q-label">Оцените качество исполнения заявки по подключению эквайринга по шкале от 1 до 5, где 5 — это «полностью удовлетворен», а 1 — «крайне не удовлетворен»?<span class="req-star" id="star-a2"> *</span></label>
+          <div class="scale-container" data-q="a2">
+            <button type="button" class="scale-btn" data-v="1">1</button>
+            <button type="button" class="scale-btn" data-v="2">2</button>
+            <button type="button" class="scale-btn" data-v="3">3</button>
+            <button type="button" class="scale-btn" data-v="4">4</button>
+            <button type="button" class="scale-btn" data-v="5">5</button>
+          </div>
+          <div class="conditional-input" id="box-a2_1">
+            <label class="q-label" style="margin-top: 16px; font-weight: 500; font-size: 14px; color: var(--text-muted);">Уточните, пожалуйста, с чем именно возникли сложности?</label>
+            <textarea id="a2_1" rows="2" placeholder="Вводим вручную со слов клиента..." oninput="updateStars()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel" style="margin-bottom: 24px;">
+        <div class="question-block" id="qblock-a3" style="border:none; padding:0; margin:0;">
+          <label class="q-label">Оцените качество консультации по условиям и процессу заключения договора по шкале от 1 до 5, где 5 — это «полностью удовлетворен», а 1 — «крайне не удовлетворен»?<span class="req-star" id="star-a3"> *</span></label>
+          <div class="scale-container" data-q="a3">
+            <button type="button" class="scale-btn" data-v="1">1</button>
+            <button type="button" class="scale-btn" data-v="2">2</button>
+            <button type="button" class="scale-btn" data-v="3">3</button>
+            <button type="button" class="scale-btn" data-v="4">4</button>
+            <button type="button" class="scale-btn" data-v="5">5</button>
+          </div>
+          <div class="conditional-input" id="box-a3_1">
+            <label class="q-label" style="margin-top: 16px; font-weight: 500; font-size: 14px; color: var(--text-muted);">Уточните, пожалуйста, с чем именно возникли сложности?</label>
+            <textarea id="a3_1" rows="2" placeholder="Вводим вручную со слов клиента..." oninput="updateStars()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="blockTE" class="hidden">
+        <div class="glass-panel" style="margin-bottom: 24px;">
+          <div class="question-block" id="qblock-a4" style="border:none; padding:0; margin:0;">
+            <label class="q-label">Оцените скорость подключения оборудования от момента подачи заявления в Банк до установки и тестирования терминала по шкале от 1 до 5, где 5 — это «полностью удовлетворен», а 1 — «крайне не удовлетворен»?<span class="req-star" id="star-a4"> *</span></label>
+            <div class="scale-container" data-q="a4">
+              <button type="button" class="scale-btn" data-v="1">1</button>
+              <button type="button" class="scale-btn" data-v="2">2</button>
+              <button type="button" class="scale-btn" data-v="3">3</button>
+              <button type="button" class="scale-btn" data-v="4">4</button>
+              <button type="button" class="scale-btn" data-v="5">5</button>
+            </div>
+            <div class="conditional-input" id="box-a4_1">
+              <label class="q-label" style="margin-top: 16px; font-weight: 500; font-size: 14px; color: var(--text-muted);">Уточните, пожалуйста, с чем именно возникли сложности?</label>
+              <textarea id="a4_1" rows="2" placeholder="Вводим вручную со слов клиента..." oninput="updateStars()"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="glass-panel" style="margin-bottom: 24px;">
+          <div class="question-block" id="qblock-a5" style="border:none; padding:0; margin:0;">
+            <label class="q-label">Оцените качество обучения работе с терминалом по шкале от 1 до 5, где 5 — это «полностью удовлетворен», а 1 — «крайне не удовлетворен»?<span class="req-star" id="star-a5"> *</span></label>
+            <div class="scale-container" data-q="a5">
+              <button type="button" class="scale-btn" data-v="1">1</button>
+              <button type="button" class="scale-btn" data-v="2">2</button>
+              <button type="button" class="scale-btn" data-v="3">3</button>
+              <button type="button" class="scale-btn" data-v="4">4</button>
+              <button type="button" class="scale-btn" data-v="5">5</button>
+            </div>
+            <div class="conditional-input" id="box-a5_1">
+              <label class="q-label" style="margin-top: 16px; font-weight: 500; font-size: 14px; color: var(--text-muted);">Уточните, пожалуйста, с чем именно возникли сложности?</label>
+              <textarea id="a5_1" rows="2" placeholder="Вводим вручную со слов клиента..." oninput="updateStars()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="blockIE" class="hidden">
+        <div class="glass-panel" style="margin-bottom: 24px;">
+          <div class="question-block" id="qblock-a6" style="border:none; padding:0; margin:0;">
+            <label class="q-label">Оцените скорость подключения эквайринга от момента подачи заявления в Банк до завершения интеграции и тестирования по шкале от 1 до 5, где 5 — это «полностью удовлетворен», а 1 — «крайне не удовлетворен»?<span class="req-star" id="star-a6"> *</span></label>
+            <div class="scale-container" data-q="a6">
+              <button type="button" class="scale-btn" data-v="1">1</button>
+              <button type="button" class="scale-btn" data-v="2">2</button>
+              <button type="button" class="scale-btn" data-v="3">3</button>
+              <button type="button" class="scale-btn" data-v="4">4</button>
+              <button type="button" class="scale-btn" data-v="5">5</button>
+            </div>
+            <div class="conditional-input" id="box-a6_1">
+              <label class="q-label" style="margin-top: 16px; font-weight: 500; font-size: 14px; color: var(--text-muted);">Уточните, пожалуйста, с чем именно возникли сложности?</label>
+              <textarea id="a6_1" rows="2" placeholder="Вводим вручную со слов клиента..." oninput="updateStars()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel">
+        <div class="script-box" style="margin-bottom: 20px;">
+          Благодарим за Ваши ответы!<br>
+          Они помогут нам обеспечить лучшее обслуживание в Банке ВТБ.<br>
+          Если в процессе эксплуатации терминала у вас возникнут вопросы, наши специалисты всегда на связи.<br>
+          До свидания!
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn btn-primary" id="saveDone" style="width: 100%; padding: 16px; font-size: 16px;">Завершить опрос</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-results" class="hidden">
+    <div class="glass-panel" style="margin-bottom: 24px;">
+      <div class="flex-between" style="margin-bottom: 16px;">
+        <h2>Результаты опроса</h2>
+        <div class="flex-row">
+          <button class="btn btn-ghost" id="toSurveyBtn">Вернуться к опросу</button>
+          <button class="btn btn-primary" id="saveExcelBtn2">Сохранить Excel</button>
+        </div>
+      </div>
+      
+      <div class="subtitle" style="margin-bottom: 0;">
+        Цветовая маркировка: 
+        <span style="color: var(--status-green); font-weight: 700;">Зеленый</span> — Завершено, 
+        <span style="color: var(--status-yellow); font-weight: 700;">Желтый</span> — Частично, 
+        <span style="color: var(--status-red); font-weight: 700;">Красный</span> — Отказ, 
+        <span style="color: var(--status-blue); font-weight: 700;">Синий</span> — Перезвонить, 
+        <span style="color: var(--text-muted); font-weight: 700;">Серый</span> — Пусто.
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Действие</th>
+            <th>#</th>
+            <th>Статус</th>
+            <th>ФИО</th>
+            <th>Телефон</th>
+            <th>Наименование партнёра</th>
+            <th>Дата и время</th>
+            <th>Вы готовы ответить на несколько вопросов?</th>
+            <th>Перезвонить</th>
+            <th>Качество исполнения заявки по подключению эквайринга</th>
+            <th>Уточните, пожалуйста, с чем именно возникли сложности?</th>
+            <th>Качество консультации по условиям и процессу заключения договора</th>
+            <th>Уточните, пожалуйста, с чем именно возникли сложности?</th>
+            <th>Основной продукт</th>
+            <th>Скорость подключения оборудования</th>
+            <th>Уточните, пожалуйста, с чем именно возникли сложности?</th>
+            <th>Качество обучения работе с терминалом</th>
+            <th>Уточните, пожалуйста, с чем именно возникли сложности?</th>
+            <th>Основной продукт</th>
+            <th>Скорость подключения эквайринга</th>
+            <th>Уточните, пожалуйста, с чем именно возникли сложности?</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ (ТОСТЫ)
+   ============================================================ */
+function showToast(message) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast error';
+  toast.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ${message}`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('out');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+/* ============================================================
+   DISCLAIMER ЛОГИКА
+   ============================================================ */
+const disclaimerOverlay = document.getElementById('disclaimerOverlay');
+const disclaimerCheck = document.getElementById('disclaimerCheck');
+const disclaimerBtn = document.getElementById('disclaimerBtn');
+
+disclaimerCheck.addEventListener('change', (e) => {
+  disclaimerBtn.disabled = !e.target.checked;
+});
+
+disclaimerBtn.addEventListener('click', () => {
+  disclaimerOverlay.classList.add('hidden');
+});
+
+/* ============================================================
+   НАСТРОЙКИ (ИМЯ, ТЕМА, ФОН)
+   ============================================================ */
+const settings = {
+  userName: localStorage.getItem('vtb_userName') || '',
+  theme: localStorage.getItem('vtb_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  bgIndex: parseInt(localStorage.getItem('vtb_bgIndex') || '0', 10)
+};
+
+function applySettings() {
+  document.documentElement.setAttribute('data-theme', settings.theme);
+  
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.textContent = settings.theme === 'dark' ? 'Темная' : 'Светлая';
+  }
+
+  const nameSpan = document.getElementById('scriptUserName');
+  if (nameSpan) {
+    if (settings.userName.trim()) {
+      nameSpan.innerHTML = `<b style="color:var(--accent-blue);">${esc(settings.userName.trim())}</b>`;
+    } else {
+      nameSpan.innerHTML = `<button class="name-btn" id="askNameBtn">Задать имя</button>`;
+      const btn = document.getElementById('askNameBtn');
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.getElementById('settingsWrap').classList.add('active');
+          const inp = document.getElementById('userNameInput');
+          inp.value = settings.userName;
+          setTimeout(() => inp.focus(), 50);
+        });
+      }
+    }
+  }
+  
+  setBg(settings.bgIndex);
+}
+
+const settingsWrap = document.getElementById('settingsWrap');
+const settingsBtn = document.getElementById('settingsBtn');
+
+settingsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  settingsWrap.classList.toggle('active');
+  if (settingsWrap.classList.contains('active')) {
+    document.getElementById('userNameInput').value = settings.userName;
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!settingsWrap.contains(e.target)) {
+    settingsWrap.classList.remove('active');
+  }
+});
+
+document.getElementById('userNameInput').addEventListener('input', (e) => {
+  const val = e.target.value.trim();
+  settings.userName = val;
+  localStorage.setItem('vtb_userName', val);
+  applySettings();
+});
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  settings.theme = settings.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('vtb_theme', settings.theme);
+  applySettings();
+});
+
+document.getElementById('bgBtn').addEventListener('click', () => {
+  settings.bgIndex = (settings.bgIndex + 1) % backgrounds.length;
+  localStorage.setItem('vtb_bgIndex', settings.bgIndex);
+  applySettings();
+});
+
+/* ============================================================
+   КНОПКА СБРОСА (НОВЫЙ ФАЙЛ)
+   ============================================================ */
+document.getElementById('newFileBtn').addEventListener('click', () => {
+  if (confirm('Сбросить текущие данные и загрузить новый файл?')) {
+    localStorage.removeItem('vtb_survey_v25'); 
+    state.clients = [];
+    state.currentIndex = -1;
+    state.sourceFileName = '';
+    state.sourceWorkbookRows = [];
+    state.headerRowIdx = -1;
+    updateStats();
+    showScreen('import');
+  }
+});
+
+/* ============================================================
+   УПРАВЛЕНИЕ ФОНОМ
+   ============================================================ */
+const backgrounds = [
+  'https://mir-s3-cdn-cf.behance.net/project_modules/1400/614830141894233.625d2e60de926.png',
+  'https://i.pinimg.com/originals/90/94/52/909452205a43160f9d3576966802333d.jpg?nii=t',
+  'https://png.pngtree.com/background/20250118/original/pngtree-captivating-blue-storm-sea-texture-picture-image_15133327.jpg'
+];
+const bgLayers = [
+  document.getElementById('bg1'),
+  document.getElementById('bg2'),
+  document.getElementById('bg3')
+];
+
+bgLayers.forEach((layer, i) => {
+  layer.style.backgroundImage = `url('${backgrounds[i]}')`;
+});
+
+function setBg(index) {
+  bgLayers.forEach((layer, i) => {
+    layer.classList.toggle('active', i === index);
+  });
+}
+
+let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+const parallaxSpeed = 0.03;
+
+window.addEventListener('mousemove', (e) => {
+  targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+  targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+function animateParallax() {
+  mouseX += (targetX - mouseX) * 0.05;
+  mouseY += (targetY - mouseY) * 0.05;
+
+  bgLayers.forEach(layer => {
+    layer.style.transform = `translate(${mouseX * parallaxSpeed * 100}px, ${mouseY * parallaxSpeed * 100}px)`;
+  });
+
+  requestAnimationFrame(animateParallax);
+}
+animateParallax();
+
+
+/* ============================================================
+   ЛОГИКА ОПРОСА
+   ============================================================ */
+const STORAGE_KEY = 'vtb_survey_v25';
+const state = {
+  clients: [],
+  currentIndex: -1,
+  sourceFileName: '',
+  sourceWorkbookRows: [],
+  headerRowIdx: -1,
+};
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    clients: state.clients,
+    currentIndex: state.currentIndex,
+    sourceFileName: state.sourceFileName,
+    sourceWorkbookRows: state.sourceWorkbookRows,
+    headerRowIdx: state.headerRowIdx,
+  }));
+  updateStats();
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s && Array.isArray(s.clients)) {
+      state.clients = s.clients;
+      state.currentIndex = s.currentIndex ?? -1;
+      state.sourceFileName = s.sourceFileName || '';
+      state.sourceWorkbookRows = s.sourceWorkbookRows || [];
+      state.headerRowIdx = typeof s.headerRowIdx === 'number' ? s.headerRowIdx : -1;
+    }
+  } catch(e) { console.warn(e); }
+}
+
+function updateStats() {
+  const total = state.clients.length;
+  const done = state.clients.filter(c=>c.status==='done').length;
+  const partial = state.clients.filter(c=>c.status==='partial').length;
+  const refused = state.clients.filter(c=>c.status==='refused').length;
+  const cb = state.clients.filter(c=>c.status==='callback').length;
+  const todo = state.clients.filter(c=>c.status==='todo').length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statPartial').textContent = partial;
+  document.getElementById('statRefuse').textContent = refused;
+  document.getElementById('statCallback').textContent = cb;
+  document.getElementById('statTodo').textContent = todo;
+}
+
+function baseName(name) { const i = name.lastIndexOf('.'); return i<0 ? name : name.slice(0,i); }
+function nonEmpty(v) { return v !== undefined && v !== null && String(v).trim() !== ''; }
+function esc(v) { return String(v ?? '').replace(/[&<>"']/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m])); }
+
+function makeClient(fio, phone, partner, product, extra) {
+  return Object.assign({
+    id: 'c_' + Math.random().toString(36).slice(2,10),
+    fio, phone, partner, product: product || 'ТЭ',
+    status: 'todo',
+    answer: {},
+    callDateTime: '',
+    callbackAt: '',
+    rowIndexInFile: -1,
+  }, extra || {});
+}
+
+function productIsTE(p) {
+  const s = String(p||'').toUpperCase();
+  if (s.includes('ИЭ')) return false;
+  return s.includes('ТЭ') || s.includes('СБП') || s === '';
+}
+function productIsIE(p) {
+  return String(p||'').toUpperCase().includes('ИЭ');
+}
+
+/* ============================================================
+   ЗАГРУЗКА
+   ============================================================ */
+const dz = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dz.addEventListener('click', () => fileInput.click());
+dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) handleFile(f);
+});
+
+async function handleFile(file) {
+  const errEl = document.getElementById('importErr');
+  errEl.textContent = '';
+  state.sourceFileName = file.name;
+
+  try {
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const text = await file.text();
+      applyRows(parseCsvToRows(text));
+    } else {
+      if (typeof XLSX === 'undefined') {
+        errEl.textContent = 'Ошибка: библиотека не загружена. Проверьте интернет.';
+        return;
+      }
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type: 'array', cellDates: false});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: '', raw: false});
+      applyRows(rows);
+    }
+    saveState();
+    showScreen('survey');
+    renderClient();
+  } catch (ex) {
+    console.error(ex);
+    errEl.textContent = 'Ошибка чтения файла: ' + ex.message;
+  }
+}
+
+function parseCsvToRows(text) {
+  const lines = [];
+  let cur = '', inQ = false, row = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ',' || ch === ';') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (cur !== '' || row.length) { row.push(cur); lines.push(row); row = []; cur = ''; } }
+      else cur += ch;
+    }
+  }
+  if (cur !== '' || row.length) { row.push(cur); lines.push(row); }
+  return lines;
+}
+
+function applyRows(rows) {
+  let headerIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][0] || '').trim().toLowerCase() === 'фио') { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) throw new Error('Не найдена строка заголовков (ФИО).');
+
+  state.sourceWorkbookRows = rows.map(r => r.slice());
+  state.headerRowIdx = headerIdx;
+
+  const data = rows.slice(headerIdx + 1);
+  const out = [];
+
+  data.forEach((r, dataIdx) => {
+    const fio = String(r[0] || '').trim();
+    if (!fio) return;
+    const phone = String(r[1] || '').trim();
+    const partner = String(r[2] || '').trim();
+    const product = String(r[11] || '').trim();
+    const c = makeClient(fio, phone, partner, product, { rowIndexInFile: headerIdx + 1 + dataIdx });
+
+    const answerIdx = [3, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 17, 18];
+    let filled = 0;
+    answerIdx.forEach(i => { if (nonEmpty(r[i])) filled++; });
+
+    const dt   = String(r[3]  || '').trim();
+    const a1   = String(r[5]  || '').trim();
+    const cb   = String(r[6]  || '').trim();
+    const a2   = String(r[7]  || '').trim();
+    const a2_1 = String(r[8]  || '').trim();
+    const a3   = String(r[9]  || '').trim();
+    const a3_1 = String(r[10] || '').trim();
+    const a4   = String(r[12] || '').trim();
+    const a4_1 = String(r[13] || '').trim();
+    const a5   = String(r[14] || '').trim();
+    const a5_1 = String(r[15] || '').trim();
+    const a6   = String(r[17] || '').trim();
+    const a6_1 = String(r[18] || '').trim();
+
+    c.answer = {
+      a1: a1 || '',
+      a2: a2 || '', a2_1: a2_1 || '',
+      a3: a3 || '', a3_1: a3_1 || '',
+      a4: a4 || '', a4_1: a4_1 || '',
+      a5: a5 || '', a5_1: a5_1 || '',
+      a6: a6 || '', a6_1: a6_1 || '',
+    };
+    c.callDateTime = dt || '';
+    c.callbackAt = cb || '';
+
+    const isTE = productIsTE(product);
+    const isIE = productIsIE(product);
+
+    if (filled === 0) {
+      c.status = 'todo';
+    } else if (a1 === 'Не готов' || a1 === 'Отказ от ответа' || a1 === 'Отказ') {
+      c.status = 'refused';
+    } else if (cb) {
+      c.status = 'callback';
+    } else {
+      const requiredScores = ['a2', 'a3'];
+      if (isTE) requiredScores.push('a4', 'a5');
+      if (isIE) requiredScores.push('a6');
+      const allRequired = a1 === 'Готов' && requiredScores.every(q => c.answer[q]);
+      c.status = allRequired ? 'done' : 'partial';
+    }
+    out.push(c);
+  });
+
+  if (!out.length) throw new Error('В файле не найдено клиентов.');
+  state.clients = out;
+  state.currentIndex = 0;
+}
+
+/* ============================================================
+   ЭКРАНЫ
+   ============================================================ */
+function showScreen(name) {
+  const mc = document.getElementById('mainContainer');
+  mc.classList.remove('mode-survey', 'mode-results');
+  
+  ['import', 'survey', 'results'].forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('hidden', s !== name);
+  });
+
+  if (name === 'results') {
+    mc.classList.add('mode-results');
+    renderResults();
+  } else if (name === 'survey') {
+    mc.classList.add('mode-survey');
+    renderClient();
+  } else {
+    mc.classList.add('mode-survey');
+  }
+}
+
+function currentClient() { return state.clients[state.currentIndex]; }
+
+function renderClient() {
+  if (!state.clients.length) { showScreen('import'); return; }
+  if (state.currentIndex < 0) state.currentIndex = 0;
+  if (state.currentIndex >= state.clients.length) state.currentIndex = state.clients.length - 1;
+  const c = currentClient();
+
+  document.getElementById('clientName').textContent = c.fio;
+  
+  document.getElementById('clientMeta').innerHTML = `
+    <div><b>Номер:</b> ${esc(c.phone)}</div>
+    <div><b>Партнер:</b> ${esc(c.partner)}</div>
+    <div><b>Продукт:</b> ${esc(c.product)}</div>
+  `;
+  
+  document.getElementById('partnerName').textContent = c.partner || '____';
+
+  // Форматирование приветствия (ИП / не ИП)
+  const greetSpan = document.getElementById('greetingPrefix');
+  if (c.fio.startsWith('ИП ')) {
+    const parts = c.fio.replace('ИП ', '').trim().split(' ');
+    if (parts.length >= 2) {
+      greetSpan.textContent = `${parts[1]} ${parts[2] || ''}, `;
+    } else {
+      greetSpan.textContent = `${parts[0]}, `;
+    }
+  } else {
+    greetSpan.textContent = ''; // Убираем "ИО, "
+  }
+
+  const st = document.getElementById('clientStatus');
+  st.className = 'status-badge ' + statusClass(c.status);
+  st.textContent = statusText(c.status);
+
+  const pct = Math.round(((state.currentIndex + (c.status !== 'todo' ? 1 : 0)) / state.clients.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  resetUI();
+  const a = c.answer || {};
+  ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'].forEach(q => { if (a[q]) setScale(q, a[q]); });
+  ['a2_1', 'a3_1', 'a4_1', 'a5_1', 'a6_1'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (a[id]) el.value = a[id];
+    const q = id.split('_')[0];
+    if (a[q] === '1' || a[q] === '2') document.getElementById('box-' + id).classList.add('show');
+  });
+  if (c.callbackAt) {
+    const cb = document.getElementById('callbackAt');
+    if (cb) cb.value = c.callbackAt;
+  }
+
+  updateA1Branches(c);
+  toggleBranches();
+  applySettings();
+  updateStars();
+
+  document.getElementById('prevBtn').disabled = state.currentIndex <= 0;
+  document.getElementById('nextBtn').disabled = state.currentIndex >= state.clients.length - 1;
+
+  if (!c.callDateTime) {
+    c.callDateTime = new Date().toLocaleString('ru-RU');
+  }
+}
+
+function statusClass(s) {
+  return ({done: 'badge-done', partial: 'badge-partial', refused: 'badge-refuse', callback: 'badge-callback'})[s] || 'badge-todo';
+}
+function statusText(s) {
+  return ({done: 'Завершено', partial: 'Частично', refused: 'Отказ', callback: 'Перезвонить'})[s] || 'Не обработан';
+}
+
+function resetUI() {
+  document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+  document.querySelectorAll('.scale-container').forEach(sc => {
+    sc.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+  });
+  ['a2_1', 'a3_1', 'a4_1', 'a5_1', 'a6_1'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+    const box = document.getElementById('box-' + id); if (box) box.classList.remove('show');
+  });
+  document.getElementById('callbackBox').classList.remove('show');
+  document.getElementById('refuseBox').classList.remove('show');
+  document.getElementById('questionsBox').classList.add('hidden');
+  document.getElementById('blockTE').classList.add('hidden');
+  document.getElementById('blockIE').classList.add('hidden');
+}
+
+window.updateStars = function() {
+  const qs = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
+  qs.forEach(q => {
+    const star = document.getElementById('star-' + q);
+    if (!star) return;
+    
+    const val = getScale(q);
+    let hideStar = false;
+
+    if (val) {
+      if (q === 'a1') {
+        hideStar = true;
+      } else if (val === '1' || val === '2') {
+        const txt = document.getElementById(q + '_1');
+        if (txt && txt.value.trim().length > 0) {
+          hideStar = true;
+        }
+      } else {
+        hideStar = true;
+      }
+    }
+
+    star.style.opacity = hideStar ? '0' : '1';
+  });
+}
+
+function setScale(q, v) {
+  const wrap = document.querySelector(`.scale-container[data-q="${q}"]`);
+  if (!wrap) return;
+  wrap.querySelectorAll('.scale-btn').forEach(b => {
+    b.classList.toggle('active', String(b.dataset.v) === String(v));
+  });
+}
+function getScale(q) {
+  const active = document.querySelector(`.scale-container[data-q="${q}"] .scale-btn.active`);
+  return active ? active.dataset.v : '';
+}
+
+document.querySelectorAll('.scale-container').forEach(sc => {
+  sc.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scale-btn');
+    if (!btn) return;
+    const q = sc.dataset.q;
+    setScale(q, btn.dataset.v);
+    updateStars();
+
+    const parentPanel = btn.closest('.glass-panel');
+    if (parentPanel) parentPanel.classList.remove('error');
+
+    if (['a2', 'a3', 'a4', 'a5', 'a6'].includes(q)) {
+      const box = document.getElementById('box-' + q + '_1');
+      if (box) {
+        if (btn.dataset.v === '1' || btn.dataset.v === '2') box.classList.add('show');
+        else { box.classList.remove('show'); const ta = document.getElementById(q + '_1'); if (ta) ta.value = ''; ta.classList.remove('error'); }
+      }
+    }
+    if (q === 'a1') updateA1Branches(currentClient(), btn.dataset.v);
+  });
+});
+
+function updateA1Branches(c, forcedValue) {
+  const a1 = forcedValue || (c && c.answer && c.answer.a1) || '';
+  
+  document.getElementById('callbackBox').classList.toggle('show', a1 === 'Перезвон');
+  document.getElementById('refuseBox').classList.toggle('show', a1 === 'Не готов');
+  document.getElementById('questionsBox').classList.toggle('hidden', a1 !== 'Готов');
+  toggleBranches();
+}
+
+function toggleBranches() {
+  const c = currentClient(); if (!c) return;
+  document.getElementById('blockTE').classList.toggle('hidden', !productIsTE(c.product));
+  document.getElementById('blockIE').classList.toggle('hidden', !productIsIE(c.product));
+}
+
+/* ============================================================
+   СОХРАНЕНИЕ
+   ============================================================ */
+document.getElementById('saveCallback').addEventListener('click', () => {
+  const c = currentClient();
+  const at = document.getElementById('callbackAt').value;
+  if (!at) { alert('Укажите дату и время для перезвона'); return; }
+  c.answer.a1 = 'Перезвон';
+  c.callbackAt = at;
+  c.status = 'callback';
+  c.callDateTime = new Date().toLocaleString('ru-RU');
+  saveState(); renderClient(); goNextIfPossible();
+});
+
+document.getElementById('saveRefuseBtn').addEventListener('click', () => {
+  const c = currentClient();
+  c.answer.a1 = 'Не готов';
+  c.status = 'refused';
+  c.callDateTime = new Date().toLocaleString('ru-RU');
+  saveState(); renderClient(); goNextIfPossible();
+});
+
+document.getElementById('saveDone').addEventListener('click', () => {
+  const c = currentClient();
+  const a1 = getScale('a1');
+  
+  if (a1 === 'Не готов') {
+    c.answer.a1 = 'Не готов';
+    c.status = 'refused';
+    c.callDateTime = new Date().toLocaleString('ru-RU');
+    saveState(); goNextIfPossible();
+    return;
+  }
+
+  let errorMessages = [];
+  let hasError = false;
+
+  if (a1 !== 'Готов') {
+    hasError = true;
+    errorMessages.push('Выберите вариант ответа на вопрос (Готов/Перезвон/Не готов)');
+  }
+
+  const req = ['a2', 'a3'];
+  const isTE = productIsTE(c.product);
+  const isIE = productIsIE(c.product);
+  if (isTE) req.push('a4', 'a5');
+  if (isIE) req.push('a6');
+  
+  req.forEach(q => {
+    const val = getScale(q);
+    let qHasError = false;
+    const num = q.replace('a', '');
+    
+    if (!val) {
+      qHasError = true;
+      errorMessages.push(`Не выбрана оценка в вопросе А${num}`);
+    } else if (val === '1' || val === '2') {
+      const txt = document.getElementById(q + '_1');
+      if (!txt || txt.value.trim() === '') {
+        qHasError = true;
+        errorMessages.push(`Не заполнен комментарий в вопросе А${num}.1 (при оценке 1-2)`);
+      }
+    }
+
+    if (qHasError) {
+      hasError = true;
+      if (val === '1' || val === '2') {
+        const txt = document.getElementById(q + '_1');
+        if (txt) txt.classList.add('error');
+      }
+    } else {
+      const txt = document.getElementById(q + '_1');
+      if (txt) txt.classList.remove('error');
+    }
+  });
+
+  if (hasError) {
+    if (errorMessages.length > 0) {
+      showToast(errorMessages[0]);
+    }
+    return;
+  }
+
+  c.answer.a1 = a1;
+  c.answer.a2 = getScale('a2');
+  c.answer.a2_1 = (c.answer.a2 === '1' || c.answer.a2 === '2') ? document.getElementById('a2_1').value.trim() : '';
+  c.answer.a3 = getScale('a3');
+  c.answer.a3_1 = (c.answer.a3 === '1' || c.answer.a3 === '2') ? document.getElementById('a3_1').value.trim() : '';
+
+  if (isTE) {
+    c.answer.a4 = getScale('a4');
+    c.answer.a4_1 = (c.answer.a4 === '1' || c.answer.a4 === '2') ? document.getElementById('a4_1').value.trim() : '';
+    c.answer.a5 = getScale('a5');
+    c.answer.a5_1 = (c.answer.a5 === '1' || c.answer.a5 === '2') ? document.getElementById('a5_1').value.trim() : '';
+    c.answer.a6 = ''; c.answer.a6_1 = '';
+  } else if (isIE) {
+    c.answer.a6 = getScale('a6');
+    c.answer.a6_1 = (c.answer.a6 === '1' || c.answer.a6 === '2') ? document.getElementById('a6_1').value.trim() : '';
+    c.answer.a4 = ''; c.answer.a4_1 = ''; c.answer.a5 = ''; c.answer.a5_1 = '';
+  }
+
+  c.status = 'done';
+  c.callDateTime = new Date().toLocaleString('ru-RU');
+  saveState();
+  goNextIfPossible();
+});
+
+function goNextIfPossible() {
+  if (state.currentIndex < state.clients.length - 1) {
+    state.currentIndex++;
+    saveState();
+    renderClient();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    showScreen('results');
+  }
+}
+
+/* ============================================================
+   НАВИГАЦИЯ
+   ============================================================ */
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (state.currentIndex > 0) { state.currentIndex--; saveState(); renderClient(); window.scrollTo({ top: 0 }); }
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (state.currentIndex < state.clients.length - 1) { state.currentIndex++; saveState(); renderClient(); window.scrollTo({ top: 0 }); }
+});
+document.getElementById('toResultsBtnHeader').addEventListener('click', () => showScreen('results'));
+document.getElementById('toSurveyBtn').addEventListener('click', () => showScreen('survey'));
+
+/* ============================================================
+   РЕЗУЛЬТАТЫ
+   ============================================================ */
+function renderResults() {
+  const tbody = document.querySelector('#resultsTable tbody');
+  tbody.innerHTML = '';
+  state.clients.forEach((c, i) => {
+    const a = c.answer || {};
+    const rowCls = c.status === 'done' ? 'row-done'
+                 : c.status === 'refused' ? 'row-refused'
+                 : c.status === 'callback' ? 'row-callback'
+                 : c.status === 'partial' ? 'row-partial'
+                 : 'row-todo';
+    const tr = document.createElement('tr');
+    tr.className = rowCls;
+    tr.innerHTML = `
+      <td style="text-align:center;">
+        <button class="btn-icon" onclick="editClient(${i})" title="Редактировать">✏️</button>
+      </td>
+      <td>${i + 1}</td>
+      <td><span class="status-badge ${statusClass(c.status)}" style="font-size:10px;">${statusText(c.status)}</span></td>
+      <td>${esc(c.fio)}</td>
+      <td>${esc(c.phone)}</td>
+      <td>${esc(c.partner)}</td>
+      <td>${esc(c.callDateTime || '')}</td>
+      <td>${esc(a.a1 || '')}</td>
+      <td>${esc(c.callbackAt || '')}</td>
+      <td>${esc(a.a2 || '')}</td>
+      <td>${esc(a.a2_1 || '')}</td>
+      <td>${esc(a.a3 || '')}</td>
+      <td>${esc(a.a3_1 || '')}</td>
+      <td>${esc(c.product || '')}</td>
+      <td>${esc(a.a4 || '')}</td>
+      <td>${esc(a.a4_1 || '')}</td>
+      <td>${esc(a.a5 || '')}</td>
+      <td>${esc(a.a5_1 || '')}</td>
+      <td>${esc(c.product || '')}</td>
+      <td>${esc(a.a6 || '')}</td>
+      <td>${esc(a.a6_1 || '')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+window.editClient = function(index) {
+  state.currentIndex = index;
+  showScreen('survey');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   ЭКСПОРТ EXCEL
+   ============================================================ */
+function buildOutputRows() {
+  if (state.sourceWorkbookRows.length && state.headerRowIdx >= 0) {
+    const rows = state.sourceWorkbookRows.map(r => r.slice());
+    state.clients.forEach(c => {
+      let idx = c.rowIndexInFile;
+      if (idx < 0 || !rows[idx] || String(rows[idx][0] || '').trim() !== c.fio) {
+        idx = rows.findIndex(r => String(r[0] || '').trim() === c.fio && String(r[1] || '').trim() === c.phone);
+      }
+      if (idx < 0) return;
+      const r = rows[idx];
+      while (r.length < 20) r.push('');
+      const a = c.answer || {};
+      r[3]  = c.callDateTime || '';
+      r[5]  = a.a1 || '';
+      r[6]  = c.callbackAt || '';
+      r[7]  = a.a2 || '';
+      r[8]  = a.a2_1 || '';
+      r[9]  = a.a3 || '';
+      r[10] = a.a3_1 || '';
+      r[12] = a.a4 || '';
+      r[13] = a.a4_1 || '';
+      r[14] = a.a5 || '';
+      r[15] = a.a5_1 || '';
+      r[17] = a.a6 || '';
+      r[18] = a.a6_1 || '';
+    });
+    return rows;
+  }
+  const headers = ['ФИО', 'Телефон', 'Наименование партнера', 'Дата и время', 'Скрипт', 'А1', 'Перезвонить', 'А2', 'А2.1', 'А3', 'А3.1', 'Основной продукт', 'А4', 'А4.1', 'А5', 'А5.1', 'Основной продукт', 'А6', 'А6.1', 'Финальная фраза'];
+  const rows = [headers];
+  state.clients.forEach(c => {
+    const a = c.answer || {};
+    rows.push([
+      c.fio, c.phone, c.partner, c.callDateTime || '', '', a.a1 || '', c.callbackAt || '',
+      a.a2 || '', a.a2_1 || '', a.a3 || '', a.a3_1 || '', c.product,
+      a.a4 || '', a.a4_1 || '', a.a5 || '', a.a5_1 || '', c.product,
+      a.a6 || '', a.a6_1 || '', ''
+    ]);
+  });
+  return rows;
+}
+
+function saveExcel() {
+  if (typeof XLSX === 'undefined') { alert('Библиотека xlsx не загружена.'); return; }
+  if (!state.clients.length) { alert('Нет данных.'); return; }
+  const ws = XLSX.utils.aoa_to_sheet(buildOutputRows());
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Лист1');
+  const src = state.sourceFileName || 'survey.xlsx';
+  const outName = `${baseName(src)}_заполнено.xlsx`;
+  XLSX.writeFile(wb, outName);
+  
+  const n = document.createElement('div');
+  n.textContent = `✅ Сохранено: ${outName}`;
+  n.style.cssText = 'position:fixed;bottom:30px;right:30px;background:var(--status-green);color:#fff;padding:16px 24px;border-radius:12px;font-weight:600;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,0.3);animation:slideUp 0.3s ease';
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 3000);
+}
+
+document.getElementById('saveExcelBtn2').addEventListener('click', saveExcel);
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+loadState();
+updateStats();
+applySettings();
+
+if (state.clients.length) {
+  showScreen('survey');
+} else {
+  showScreen('import');
+}
+
+(function loadSheetJS() {
+  if (typeof XLSX !== 'undefined') return;
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
